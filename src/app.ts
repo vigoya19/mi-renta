@@ -6,11 +6,13 @@ import { GraphQLContext } from './types/context';
 import { initDb } from './db';
 import jwt from 'jsonwebtoken';
 import { env } from './config/env';
+import { createContainer } from './di/container';
 
 export async function createApp() {
   await initDb();
 
   const app = express();
+  const container = createContainer();
   const server = new ApolloServer({
     typeDefs,
     resolvers,
@@ -34,7 +36,7 @@ export async function createApp() {
         }
       }
 
-      return { user };
+      return { user, container };
     }
   });
 

@@ -1,11 +1,8 @@
-import { AuthService } from './auth.service';
 import { requireAuth } from '../../common/auth-guards';
 
 import { Resolver, EmptyArgs } from '../../types/resolvers';
 import { RegisterArgs, LoginArgs, AuthPayload } from '../../types/auth';
 import { User } from '../../models/user.model';
-
-const authService = new AuthService();
 
 const accountResolver: Resolver<unknown, EmptyArgs, User | null> = (
   _parent,
@@ -13,15 +10,15 @@ const accountResolver: Resolver<unknown, EmptyArgs, User | null> = (
   ctx,
 ) => {
   const currentUser = requireAuth(ctx);
-  return authService.getAccount(currentUser.userId);
+  return ctx.container.authService.getAccount(currentUser.userId);
 };
 
 const registerResolver: Resolver<unknown, RegisterArgs, AuthPayload> = (
   _parent,
   args,
-  _ctx,
+  ctx,
 ) => {
-  return authService.register(
+  return ctx.container.authService.register(
     args.name,
     args.email,
     args.password,
@@ -32,9 +29,9 @@ const registerResolver: Resolver<unknown, RegisterArgs, AuthPayload> = (
 const loginResolver: Resolver<unknown, LoginArgs, AuthPayload> = (
   _parent,
   args,
-  _ctx,
+  ctx,
 ) => {
-  return authService.login(args.email, args.password);
+  return ctx.container.authService.login(args.email, args.password);
 };
 
 export const authResolvers = {

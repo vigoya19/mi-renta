@@ -1,4 +1,3 @@
-import { PropertyService } from './property.service';
 import { GraphQLContext } from '../../types/context';
 import { Property } from '../../models/property.model';
 import { User } from '../../models/user.model';
@@ -12,31 +11,29 @@ import {
   DeletePropertyArgs,
 } from '../../types/property';
 
-const propertyService = new PropertyService();
-
 const myPropertiesResolver: Resolver<unknown, EmptyArgs, Property[]> = (
   _parent,
   _args,
   ctx,
 ) => {
-  return propertyService.getMyProperties(ctx);
+  return ctx.container.propertyService.getMyProperties(ctx);
 };
 
 const propertyByIdResolver: Resolver<unknown, PropertyByIdArgs, Property | null> = (
   _parent,
   args,
-  _ctx,
+  ctx,
 ) => {
   const id = parseInt(args.id, 10);
-  return propertyService.getPropertyById(id);
+  return ctx.container.propertyService.getPropertyById(id);
 };
 
 const searchAvailablePropertiesResolver: Resolver<
   unknown,
   SearchAvailablePropertiesArgs,
   Property[]
-> = (_parent, args, _ctx) => {
-  return propertyService.searchAvailableProperties(
+> = (_parent, args, ctx) => {
+  return ctx.container.propertyService.searchAvailableProperties(
     args.start,
     args.end,
     args.guests,
@@ -48,7 +45,7 @@ const createPropertyResolver: Resolver<unknown, CreatePropertyArgs, Property> = 
   args,
   ctx,
 ) => {
-  return propertyService.createProperty(ctx, {
+  return ctx.container.propertyService.createProperty(ctx, {
     title: args.title,
     description: args.description,
     maxGuests: args.maxGuests,
@@ -62,7 +59,7 @@ const updatePropertyResolver: Resolver<unknown, UpdatePropertyArgs, Property> = 
   ctx,
 ) => {
   const id = parseInt(args.id, 10);
-  return propertyService.updateProperty(ctx, id, {
+  return ctx.container.propertyService.updateProperty(ctx, id, {
     title: args.title,
     description: args.description,
     maxGuests: args.maxGuests,
@@ -76,7 +73,7 @@ const deletePropertyResolver: Resolver<unknown, DeletePropertyArgs, boolean> = (
   ctx,
 ) => {
   const id = parseInt(args.id, 10);
-  return propertyService.deleteProperty(ctx, id);
+  return ctx.container.propertyService.deleteProperty(ctx, id);
 };
 
 const propertyOwnerResolver = (

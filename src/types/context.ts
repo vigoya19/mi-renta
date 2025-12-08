@@ -1,3 +1,5 @@
+import { AppContainer } from '../di/container';
+
 export interface AuthUser {
   userId: number;
   role: 'PROPIETARIO' | 'VIAJERO';
@@ -5,4 +7,5 @@ export interface AuthUser {
 
 export interface GraphQLContext {
   user: AuthUser | null;
+  container: AppContainer;
 }

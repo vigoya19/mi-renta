@@ -1,4 +1,3 @@
-import { BookingService } from './booking.service';
 import { GraphQLContext } from '../../types/context';
 import { Booking } from '../../models/booking.model';
 import { Property } from '../../models/property.model';
@@ -10,9 +9,6 @@ import {
   UpdateBookingStatusArgs,
 } from '../../types/booking';
 
-const bookingService = new BookingService();
-
-
 const createBookingResolver: Resolver<
   unknown,
   CreateBookingArgs,
@@ -20,7 +16,7 @@ const createBookingResolver: Resolver<
 > = (_parent, args, ctx) => {
   const propertyId = parseInt(args.propertyId, 10);
 
-  return bookingService.createBooking(ctx, {
+  return ctx.container.bookingService.createBooking(ctx, {
     propertyId,
     startDate: args.startDate,
     endDate: args.endDate,
@@ -35,7 +31,7 @@ const updateBookingStatusResolver: Resolver<
 > = (_parent, args, ctx) => {
   const id = parseInt(args.id, 10);
 
-  return bookingService.updateBookingStatus(ctx, {
+  return ctx.container.bookingService.updateBookingStatus(ctx, {
     id,
     status: args.status,
   });
