@@ -6,7 +6,7 @@ import { GraphQLContext } from './types/context';
 import { initDb } from './db';
 import jwt from 'jsonwebtoken';
 import { env } from './config/env';
-import { createContainer } from './di/container';
+import { createContainer } from './dependency-injection/container';
 
 export async function createApp() {
   await initDb();

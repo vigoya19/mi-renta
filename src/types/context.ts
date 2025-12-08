@@ -1,4 +1,4 @@
-import { AppContainer } from '../di/container';
+import { AppContainer } from '../dependency-injection/container';
 
 export interface AuthUser {
   userId: number;
