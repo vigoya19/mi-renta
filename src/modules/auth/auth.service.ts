@@ -1,0 +1,51 @@
+import bcrypt from 'bcryptjs';
+import { User } from '../../models/user.model';
+import { signToken } from './jwt';
+
+export class AuthService {
+  async register(
+    name: string,
+    email: string,
+    password: string,
+    role: 'PROPIETARIO' | 'VIAJERO',
+  ) {
+    const existing = await User.findOne({ where: { email } });
+    if (existing) {
+      throw new Error('El email ya está registrado');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      email,
+      passwordHash,
+      role,
+    });
+
+    const token = signToken({ userId: user.id, role: user.role });
+
+    return { user, token };
+  }
+
+  async login(email: string, password: string) {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      throw new Error('Credenciales inválidas');
+    }
+
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) {
+      throw new Error('Credenciales inválidas');
+    }
+
+    const token = signToken({ userId: user.id, role: user.role });
+
+    return { user, token };
+  }
+
+  async getAccount(userId: number) {
+    const user = await User.findByPk(userId);
+    return user;
+  }
+}
