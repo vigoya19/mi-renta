@@ -4,47 +4,67 @@ import { Booking } from '../../models/booking.model';
 import { Property } from '../../models/property.model';
 import { User } from '../../models/user.model';
 
-var bookingService = new BookingService();
+import { Resolver, EmptyArgs } from '../../types/resolvers';
+import {
+  CreateBookingArgs,
+  UpdateBookingStatusArgs,
+} from '../../types/booking';
 
-export var bookingResolvers = {
+const bookingService = new BookingService();
+
+
+const createBookingResolver: Resolver<
+  unknown,
+  CreateBookingArgs,
+  Booking
+> = (_parent, args, ctx) => {
+  const propertyId = parseInt(args.propertyId, 10);
+
+  return bookingService.createBooking(ctx, {
+    propertyId,
+    startDate: args.startDate,
+    endDate: args.endDate,
+    guests: args.guests,
+  });
+};
+
+const updateBookingStatusResolver: Resolver<
+  unknown,
+  UpdateBookingStatusArgs,
+  Booking
+> = (_parent, args, ctx) => {
+  const id = parseInt(args.id, 10);
+
+  return bookingService.updateBookingStatus(ctx, {
+    id,
+    status: args.status,
+  });
+};
+
+const bookingPropertyResolver = (
+  parent: Booking,
+  _args: EmptyArgs,
+  _ctx: GraphQLContext,
+) => {
+  return Property.findByPk(parent.propertyId);
+};
+
+const bookingTravelerResolver = (
+  parent: Booking,
+  _args: EmptyArgs,
+  _ctx: GraphQLContext,
+) => {
+  return User.findByPk(parent.userId);
+};
+
+
+export const bookingResolvers = {
   Mutation: {
-    createBooking: function (
-      _: any,
-      args: {
-        propertyId: string;
-        startDate: string;
-        endDate: string;
-        guests: number;
-      },
-      ctx: GraphQLContext,
-    ) {
-      var propertyId = parseInt(args.propertyId, 10);
-      return bookingService.createBooking(ctx, {
-        propertyId: propertyId,
-        startDate: args.startDate,
-        endDate: args.endDate,
-        guests: args.guests,
-      });
-    },
-
-    updateBookingStatus: function (
-      _: any,
-      args: { id: string; status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' },
-      ctx: GraphQLContext,
-    ) {
-      var id = parseInt(args.id, 10);
-      return bookingService.updateBookingStatus(ctx, {
-        id: id,
-        status: args.status,
-      });
-    },
+    createBooking: createBookingResolver,
+    updateBookingStatus: updateBookingStatusResolver,
   },
   Booking: {
-    property: function (parent: Booking) {
-      return Property.findByPk(parent.propertyId);
-    },
-    traveler: function (parent: Booking) {
-      return User.findByPk(parent.userId);
-    },
+    property: bookingPropertyResolver,
+    traveler: bookingTravelerResolver,
   },
 };
