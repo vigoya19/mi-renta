@@ -5,6 +5,8 @@ import {
   requirePositiveInt,
   requirePositiveIntFromString,
   requirePositiveNumber,
+  requireRoleValue,
+  requireBookingStatus,
 } from '../validators';
 
 describe('validators', () => {
@@ -44,5 +46,12 @@ describe('validators', () => {
   test('requirePositiveNumber', () => {
     expect(requirePositiveNumber(2.5, 'price')).toBe(2.5);
     expect(() => requirePositiveNumber(0, 'price')).toThrow();
+  });
+
+  test('requireRoleValue and requireBookingStatus', () => {
+    expect(() => requireRoleValue('PROPIETARIO')).not.toThrow();
+    expect(() => requireRoleValue('INVALID')).toThrow();
+    expect(() => requireBookingStatus('CONFIRMED')).not.toThrow();
+    expect(() => requireBookingStatus('BAD')).toThrow();
   });
 });

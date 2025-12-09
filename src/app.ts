@@ -7,6 +7,7 @@ import { initDb } from './db';
 import jwt from 'jsonwebtoken';
 import { env } from './config/env';
 import { createContainer } from './dependency-injection/container';
+import { express as voyagerMiddleware } from 'graphql-voyager/middleware';
 
 export async function createApp() {
   await initDb();
@@ -16,6 +17,8 @@ export async function createApp() {
   const server = new ApolloServer({
     typeDefs,
     resolvers,
+    introspection: true,
+    plugins: [],
     context: ({ req }): GraphQLContext => {
       const authHeader = req.headers.authorization || '';
       const token = authHeader.startsWith('Bearer ')
@@ -43,6 +46,14 @@ export async function createApp() {
   await server.start();
 
   server.applyMiddleware({ app: app as any, path: '/graphql' });
+  app.use('/voyager', voyagerMiddleware({ endpointUrl: '/graphql' }));
+  app.use(
+    '/voyager-mutation',
+    voyagerMiddleware({
+      endpointUrl: '/graphql',
+      displayOptions: { rootType: 'Mutation' },
+    }),
+  );
 
   return app;
 }

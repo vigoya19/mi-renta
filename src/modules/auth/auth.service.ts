@@ -3,6 +3,8 @@ import { User } from '../../models/user.model';
 import { signToken } from './jwt';
 import { ERROR_MESSAGES } from '../../common/error-messages';
 import { ApolloError, AuthenticationError } from 'apollo-server-express';
+import { WhereOptions } from 'sequelize';
+import { UserAttributes } from '../../models/user.model';
 
 export class AuthService {
   async register(
@@ -11,7 +13,8 @@ export class AuthService {
     password: string,
     role: 'PROPIETARIO' | 'VIAJERO',
   ) {
-    const existing = await User.findOne({ where: { email } });
+    const whereEmail = { email } as unknown as WhereOptions<UserAttributes>;
+    const existing = await User.findOne({ where: whereEmail });
     if (existing) {
       throw new ApolloError(ERROR_MESSAGES.AUTH.EMAIL_IN_USE, 'BAD_USER_INPUT');
     }
@@ -31,7 +34,8 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await User.findOne({ where: { email } });
+    const whereEmail = { email } as unknown as WhereOptions<UserAttributes>;
+    const user = await User.findOne({ where: whereEmail });
     if (!user) {
       throw new AuthenticationError(ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
     }

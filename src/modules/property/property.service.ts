@@ -1,6 +1,6 @@
 import { Booking, BookingAttributes } from '../../models/booking.model';
 import { BlockedDate, BlockedDateAttributes } from '../../models/blocked-date.model';
-import { Op, WhereAttributeHash } from 'sequelize';
+import { Op, WhereAttributeHash, literal } from 'sequelize';
 
 import { Property, PropertyAttributes } from '../../models/property.model';
 import { requireRole } from '../../common/auth-guards';
@@ -10,6 +10,7 @@ import { PaginationParams } from '../../types/pagination';
 import { ERROR_MESSAGES } from '../../common/error-messages';
 import { ApolloError } from 'apollo-server-express';
 import { getSequelize } from '../../db';
+import { diffInDays as diffInDaysUtc } from '../../common/date-utils';
 
 export class PropertyService {
   async getMyProperties(ctx: GraphQLContext, pagination: PaginationParams) {
@@ -120,40 +121,52 @@ export class PropertyService {
     }
 
     const sequelize = getSequelize();
-    const available = await sequelize.query<Property>(
-      `
-      SELECT *
-      FROM Properties p
-      WHERE p.maxGuests >= :guests
-        AND NOT EXISTS (
-          SELECT 1 FROM Bookings b
-          WHERE b.propertyId = p.id
-            AND b.status = 'CONFIRMED'
-            AND b.startDate <= :end
-            AND b.endDate >= :start
-        )
-        AND NOT EXISTS (
-          SELECT 1 FROM BlockedDates bd
-          WHERE bd.propertyId = p.id
-            AND bd.startDate <= :end
-            AND bd.endDate >= :start
-        )
-      ORDER BY p.id ASC
-      LIMIT :limit OFFSET :offset
-    `,
-      {
-        replacements: {
-          guests,
-          start,
-          end,
-          limit: pagination.limit,
-          offset: pagination.offset,
-        },
-        model: Property,
-        mapToModel: true,
-      },
-    );
+    const escapedStart = sequelize.escape(start);
+    const escapedEnd = sequelize.escape(end);
+    const andConditions = {
+      [Op.and]: [
+        literal(
+          `NOT EXISTS (
+            SELECT 1 FROM Bookings b
+            WHERE b.propertyId = Property.id
+              AND b.status = 'CONFIRMED'
+              AND b.startDate <= ${escapedEnd}
+              AND b.endDate >= ${escapedStart}
+          )`,
+        ),
+        literal(
+          `NOT EXISTS (
+            SELECT 1 FROM BlockedDates bd
+            WHERE bd.propertyId = Property.id
+              AND bd.startDate <= ${escapedEnd}
+              AND bd.endDate >= ${escapedStart}
+          )`,
+        ),
+      ],
+    };
 
-    return available;
+    const properties = await Property.findAll({
+      where: {
+        maxGuests: { [Op.gte]: guests },
+        [Op.and]: (andConditions as any)[Op.and],
+      } as unknown as WhereAttributeHash<PropertyAttributes>,
+      order: [['id', 'ASC']],
+      limit: pagination.limit,
+      offset: pagination.offset,
+    });
+
+    return properties.map(function (p) {
+      const nights = Math.max(1, diffInDaysUtc(start, end));
+      const base = typeof p.basePricePerNight === 'number'
+        ? p.basePricePerNight
+        : Number(p.basePricePerNight);
+      const totalPrice = base * nights;
+
+      const plain = (p as unknown as { get: (opt?: any) => any }).get({ plain: true });
+
+      return Object.assign({}, plain, {
+        totalPrice,
+      }) as Property & { totalPrice: number };
+    });
   }
 }

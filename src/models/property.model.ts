@@ -31,6 +31,7 @@ export class Property
   public ownerId!: number;
   public maxGuests!: number;
   public basePricePerNight!: number;
+  public totalPrice?: number;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;

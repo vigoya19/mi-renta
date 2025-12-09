@@ -1,10 +1,11 @@
-import { ModelCtor, Sequelize } from 'sequelize';
+import { Model, ModelCtor, ModelStatic, Sequelize } from 'sequelize';
 import { env } from '../config/env';
 
 import { initUserModel, User } from '../models/user.model';
 import { initPropertyModel, Property } from '../models/property.model';
 import { initBookingModel, Booking } from '../models/booking.model';
 import { initBlockedDateModel, BlockedDate } from '../models/blocked-date.model';
+import { logger } from '../common/logger';
 
 let sequelize: Sequelize;
 
@@ -26,10 +27,15 @@ export function getSequelize(): Sequelize {
 }
 
 function initAssociations(): void {
-  const UserModel = User as unknown as ModelCtor<User>;
-  const PropertyModel = Property as unknown as ModelCtor<Property>;
-  const BookingModel = Booking as unknown as ModelCtor<Booking>;
-  const BlockedDateModel = BlockedDate as unknown as ModelCtor<BlockedDate>;
+  type AssocModel<M extends Model> = ModelStatic<M> & {
+    hasMany: (...args: unknown[]) => unknown;
+    belongsTo: (...args: unknown[]) => unknown;
+  };
+
+  const UserModel = User as unknown as AssocModel<User>;
+  const PropertyModel = Property as unknown as AssocModel<Property>;
+  const BookingModel = Booking as unknown as AssocModel<Booking>;
+  const BlockedDateModel = BlockedDate as unknown as AssocModel<BlockedDate>;
 
   UserModel.hasMany(PropertyModel, {
     foreignKey: 'ownerId',
@@ -79,13 +85,13 @@ export async function initDb(): Promise<void> {
   initAssociations();
 
   await sequelize.authenticate();
-  console.log('✅ Conexión a MySQL establecida correctamente');
+  logger.info('Conexión a MySQL establecida correctamente');
 
   if (process.env.NODE_ENV === 'development') {
     await sequelize.sync();
-    console.log('✅ Modelos sincronizados con la base de datos (dev sync habilitado)');
+    logger.info('Modelos sincronizados con la base de datos (dev sync habilitado)');
   } else {
-    console.log('ℹ️ sync() omitido fuera de development; usa migraciones para cambios de esquema');
+    logger.info('sync() omitido fuera de development; usa migraciones para cambios de esquema');
   }
 }
 

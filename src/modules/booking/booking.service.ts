@@ -1,10 +1,10 @@
-import { Booking } from '../../models/booking.model';
+import { Booking, BookingAttributes } from '../../models/booking.model';
 import { Property } from '../../models/property.model';
-import { BlockedDate } from '../../models/blocked-date.model';
+import { BlockedDate, BlockedDateAttributes } from '../../models/blocked-date.model';
 import { GraphQLContext } from '../../types/context';
 import { requireRole } from '../../common/auth-guards';
 import { diffInDays } from '../../common/date-utils';
-import { Op } from 'sequelize';
+import { Op, WhereOptions } from 'sequelize';
 import { ERROR_MESSAGES } from '../../common/error-messages';
 import { ApolloError } from 'apollo-server-express';
 
@@ -29,25 +29,29 @@ export class BookingService {
       throw new ApolloError(ERROR_MESSAGES.BOOKING.CAPACITY_EXCEEDED, 'BAD_USER_INPUT');
     }
 
+    const overlappingBookingsWhere = {
+      propertyId: args.propertyId,
+      status: 'CONFIRMED',
+      startDate: { [Op.lte]: args.endDate },
+      endDate: { [Op.gte]: args.startDate },
+    } as unknown as WhereOptions<BookingAttributes>;
+
     const overlappingBookings = await Booking.findAll({
-      where: {
-        propertyId: args.propertyId,
-        status: 'CONFIRMED',
-        startDate: { [Op.lte]: args.endDate },
-        endDate: { [Op.gte]: args.startDate },
-      },
+      where: overlappingBookingsWhere,
     });
 
     if (overlappingBookings.length > 0) {
       throw new ApolloError(ERROR_MESSAGES.BOOKING.DATES_UNAVAILABLE_BOOKING, 'CONFLICT');
     }
 
+    const overlappingBlocksWhere = {
+      propertyId: args.propertyId,
+      startDate: { [Op.lte]: args.endDate },
+      endDate: { [Op.gte]: args.startDate },
+    } as unknown as WhereOptions<BlockedDateAttributes>;
+
     const overlappingBlocks = await BlockedDate.findAll({
-      where: {
-        propertyId: args.propertyId,
-        startDate: { [Op.lte]: args.endDate },
-        endDate: { [Op.gte]: args.startDate },
-      },
+      where: overlappingBlocksWhere,
     });
 
     if (overlappingBlocks.length > 0) {
@@ -102,7 +106,7 @@ export class BookingService {
           id: { [Op.ne]: booking.id },
           startDate: { [Op.lte]: booking.endDate },
           endDate: { [Op.gte]: booking.startDate },
-        },
+        } as unknown as WhereOptions<BookingAttributes>,
       });
 
       if (overlappingBookings.length > 0) {
@@ -114,7 +118,7 @@ export class BookingService {
           propertyId: booking.propertyId,
           startDate: { [Op.lte]: booking.endDate },
           endDate: { [Op.gte]: booking.startDate },
-        },
+        } as unknown as WhereOptions<BlockedDateAttributes>,
       });
 
       if (overlappingBlocks.length > 0) {
