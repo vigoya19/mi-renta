@@ -6,14 +6,17 @@ import { Property } from '../../models/property.model';
 import { requireRole } from '../../common/auth-guards';
 import { GraphQLContext } from '../../types/context';
 import { diffInDays } from '../../common/date-utils';
+import { PaginationParams } from '../../types/pagination';
 
 export class PropertyService {
-  async getMyProperties(ctx: GraphQLContext) {
-    var currentUser = requireRole(ctx, 'PROPIETARIO');
+  async getMyProperties(ctx: GraphQLContext, pagination: PaginationParams) {
+    const currentUser = requireRole(ctx, 'PROPIETARIO');
 
     return Property.findAll({
       where: { ownerId: currentUser.userId },
       order: [['id', 'ASC']],
+      limit: pagination.limit,
+      offset: pagination.offset,
     });
   }
 
@@ -30,9 +33,9 @@ export class PropertyService {
       basePricePerNight: number;
     },
   ) {
-    var currentUser = requireRole(ctx, 'PROPIETARIO');
+    const currentUser = requireRole(ctx, 'PROPIETARIO');
 
-    var property = await Property.create({
+    const property = await Property.create({
       title: data.title,
       description: data.description || null,
       maxGuests: data.maxGuests,
@@ -53,9 +56,9 @@ export class PropertyService {
       basePricePerNight?: number;
     },
   ) {
-    var currentUser = requireRole(ctx, 'PROPIETARIO');
+    const currentUser = requireRole(ctx, 'PROPIETARIO');
 
-    var property = await Property.findByPk(id);
+    const property = await Property.findByPk(id);
 
     if (!property) {
       throw new Error('Propiedad no encontrada');
@@ -84,9 +87,9 @@ export class PropertyService {
   }
 
   async deleteProperty(ctx: GraphQLContext, id: number) {
-    var currentUser = requireRole(ctx, 'PROPIETARIO');
+    const currentUser = requireRole(ctx, 'PROPIETARIO');
 
-    var property = await Property.findByPk(id);
+    const property = await Property.findByPk(id);
 
     if (!property) {
       throw new Error('Propiedad no encontrada');
@@ -105,14 +108,15 @@ export class PropertyService {
     start: string,
     end: string,
     guests: number,
+    pagination: PaginationParams,
   ) {
-    var days = diffInDays(start, end);
+    const days = diffInDays(start, end);
     if (days <= 0) {
       throw new Error('El rango de fechas es inválido (start >= end)');
     }
 
     // 1) Propiedades cuyo maxGuests >= guests
-    var properties = await Property.findAll({
+    const properties = await Property.findAll({
       where: {
         maxGuests: { [Op.gte]: guests },
       },
@@ -122,12 +126,12 @@ export class PropertyService {
       return [];
     }
 
-    var propertyIds = properties.map(function (p) {
+    const propertyIds = properties.map(function (p) {
       return p.id;
     });
 
     // 2) Reservas confirmadas solapadas
-    var overlappingBookings = await Booking.findAll({
+    const overlappingBookings = await Booking.findAll({
       where: {
         propertyId: { [Op.in]: propertyIds },
         status: 'CONFIRMED',
@@ -136,13 +140,13 @@ export class PropertyService {
       },
     });
 
-    var bookedPropertyIds: { [key: number]: boolean } = {};
+    const bookedPropertyIds: { [key: number]: boolean } = {};
     overlappingBookings.forEach(function (b) {
       bookedPropertyIds[b.propertyId] = true;
     });
 
     // 3) Bloqueos solapados
-    var overlappingBlocks = await BlockedDate.findAll({
+    const overlappingBlocks = await BlockedDate.findAll({
       where: {
         propertyId: { [Op.in]: propertyIds },
         startDate: { [Op.lte]: end },
@@ -150,16 +154,19 @@ export class PropertyService {
       },
     });
 
-    var blockedPropertyIds: { [key: number]: boolean } = {};
+    const blockedPropertyIds: { [key: number]: boolean } = {};
     overlappingBlocks.forEach(function (bd) {
       blockedPropertyIds[bd.propertyId] = true;
     });
 
     // 4) Filtrar propiedades que no estén en booked ni blocked
-    var available = properties.filter(function (p) {
+    const available = properties.filter(function (p) {
       return !bookedPropertyIds[p.id] && !blockedPropertyIds[p.id];
     });
 
-    return available;
+    const sliceStart = pagination.offset;
+    const sliceEnd = pagination.offset + pagination.limit;
+
+    return available.slice(sliceStart, sliceEnd);
   }
 }

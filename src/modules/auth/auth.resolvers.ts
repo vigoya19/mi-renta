@@ -3,6 +3,8 @@ import { requireAuth } from '../../common/auth-guards';
 import { Resolver, EmptyArgs } from '../../types/resolvers';
 import { RegisterArgs, LoginArgs, AuthPayload } from '../../types/auth';
 import { User } from '../../models/user.model';
+import { validateDto } from '../../common/validation';
+import { LoginDto, RegisterDto } from '../../dtos/auth.dto';
 
 const accountResolver: Resolver<unknown, EmptyArgs, User | null> = (
   _parent,
@@ -18,11 +20,13 @@ const registerResolver: Resolver<unknown, RegisterArgs, AuthPayload> = (
   args,
   ctx,
 ) => {
+  const dto = validateDto(RegisterDto, args);
+
   return ctx.container.authService.register(
-    args.name,
-    args.email,
-    args.password,
-    args.role,
+    dto.name,
+    dto.email,
+    dto.password,
+    dto.role,
   );
 };
 
@@ -31,7 +35,9 @@ const loginResolver: Resolver<unknown, LoginArgs, AuthPayload> = (
   args,
   ctx,
 ) => {
-  return ctx.container.authService.login(args.email, args.password);
+  const dto = validateDto(LoginDto, args);
+
+  return ctx.container.authService.login(dto.email, dto.password);
 };
 
 export const authResolvers = {

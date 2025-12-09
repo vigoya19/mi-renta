@@ -11,14 +11,14 @@ export class BlockedDateService {
     ctx: GraphQLContext,
     args: { propertyId: number; startDate: string; endDate: string },
   ) {
-    var currentUser = requireRole(ctx, 'PROPIETARIO');
+    const currentUser = requireRole(ctx, 'PROPIETARIO');
 
-    var days = diffInDays(args.startDate, args.endDate);
+    const days = diffInDays(args.startDate, args.endDate);
     if (days <= 0) {
       throw new Error('El rango de fechas es inválido (start >= end)');
     }
 
-    var property = await Property.findByPk(args.propertyId);
+    const property = await Property.findByPk(args.propertyId);
     if (!property) {
       throw new Error('Propiedad no encontrada');
     }
@@ -26,7 +26,7 @@ export class BlockedDateService {
       throw new Error('No autorizado para bloquear esta propiedad');
     }
 
-    var overlappingBookings = await Booking.findAll({
+    const overlappingBookings = await Booking.findAll({
       where: {
         propertyId: args.propertyId,
         status: 'CONFIRMED',
@@ -41,7 +41,7 @@ export class BlockedDateService {
       );
     }
 
-    var overlappingBlocks = await BlockedDate.findAll({
+    const overlappingBlocks = await BlockedDate.findAll({
       where: {
         propertyId: args.propertyId,
         startDate: { [Op.lte]: args.endDate },
@@ -55,7 +55,7 @@ export class BlockedDateService {
       );
     }
 
-    var blocked = await BlockedDate.create({
+    const blocked = await BlockedDate.create({
       propertyId: args.propertyId,
       startDate: args.startDate,
       endDate: args.endDate,

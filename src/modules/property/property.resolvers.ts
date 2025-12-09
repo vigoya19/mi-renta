@@ -9,23 +9,36 @@ import {
   CreatePropertyArgs,
   UpdatePropertyArgs,
   DeletePropertyArgs,
+  MyPropertiesArgs,
 } from '../../types/property';
+import { normalizePagination } from '../../common/validators';
+import { validateDto } from '../../common/validation';
+import {
+  CreatePropertyDto,
+  DeletePropertyDto,
+  MyPropertiesDto,
+  PropertyByIdDto,
+  SearchAvailablePropertiesDto,
+  UpdatePropertyDto,
+} from '../../dtos/property.dto';
 
-const myPropertiesResolver: Resolver<unknown, EmptyArgs, Property[]> = (
-  _parent,
-  _args,
-  ctx,
-) => {
-  return ctx.container.propertyService.getMyProperties(ctx);
-};
+const myPropertiesResolver: Resolver<unknown, MyPropertiesArgs, Property[]> =
+  (_parent, args, ctx) => {
+    const dto = validateDto(MyPropertiesDto, args);
+    const pagination = normalizePagination({
+      page: dto.page,
+      pageSize: dto.pageSize,
+    });
+    return ctx.container.propertyService.getMyProperties(ctx, pagination);
+  };
 
 const propertyByIdResolver: Resolver<unknown, PropertyByIdArgs, Property | null> = (
   _parent,
   args,
   ctx,
 ) => {
-  const id = parseInt(args.id, 10);
-  return ctx.container.propertyService.getPropertyById(id);
+  const dto = validateDto(PropertyByIdDto, args);
+  return ctx.container.propertyService.getPropertyById(dto.id);
 };
 
 const searchAvailablePropertiesResolver: Resolver<
@@ -33,10 +46,17 @@ const searchAvailablePropertiesResolver: Resolver<
   SearchAvailablePropertiesArgs,
   Property[]
 > = (_parent, args, ctx) => {
+  const dto = validateDto(SearchAvailablePropertiesDto, args);
+  const pagination = normalizePagination({
+    page: dto.page,
+    pageSize: dto.pageSize,
+  });
+
   return ctx.container.propertyService.searchAvailableProperties(
-    args.start,
-    args.end,
-    args.guests,
+    dto.start,
+    dto.end,
+    dto.guests,
+    pagination,
   );
 };
 
@@ -45,11 +65,13 @@ const createPropertyResolver: Resolver<unknown, CreatePropertyArgs, Property> = 
   args,
   ctx,
 ) => {
+  const dto = validateDto(CreatePropertyDto, args);
+
   return ctx.container.propertyService.createProperty(ctx, {
-    title: args.title,
-    description: args.description,
-    maxGuests: args.maxGuests,
-    basePricePerNight: args.basePricePerNight,
+    title: dto.title,
+    description: dto.description,
+    maxGuests: dto.maxGuests,
+    basePricePerNight: dto.basePricePerNight,
   });
 };
 
@@ -58,12 +80,13 @@ const updatePropertyResolver: Resolver<unknown, UpdatePropertyArgs, Property> = 
   args,
   ctx,
 ) => {
-  const id = parseInt(args.id, 10);
-  return ctx.container.propertyService.updateProperty(ctx, id, {
-    title: args.title,
-    description: args.description,
-    maxGuests: args.maxGuests,
-    basePricePerNight: args.basePricePerNight,
+  const dto = validateDto(UpdatePropertyDto, args);
+
+  return ctx.container.propertyService.updateProperty(ctx, dto.id, {
+    title: dto.title,
+    description: dto.description,
+    maxGuests: dto.maxGuests,
+    basePricePerNight: dto.basePricePerNight,
   });
 };
 
@@ -72,8 +95,8 @@ const deletePropertyResolver: Resolver<unknown, DeletePropertyArgs, boolean> = (
   args,
   ctx,
 ) => {
-  const id = parseInt(args.id, 10);
-  return ctx.container.propertyService.deleteProperty(ctx, id);
+  const dto = validateDto(DeletePropertyDto, args);
+  return ctx.container.propertyService.deleteProperty(ctx, dto.id);
 };
 
 const propertyOwnerResolver = (

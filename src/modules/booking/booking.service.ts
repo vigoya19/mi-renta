@@ -11,14 +11,14 @@ export class BookingService {
     ctx: GraphQLContext,
     args: { propertyId: number; startDate: string; endDate: string; guests: number },
   ) {
-    var currentUser = requireRole(ctx, 'VIAJERO');
+    const currentUser = requireRole(ctx, 'VIAJERO');
 
-    var days = diffInDays(args.startDate, args.endDate);
+    const days = diffInDays(args.startDate, args.endDate);
     if (days <= 0) {
       throw new Error('El rango de fechas es inválido (start >= end)');
     }
 
-    var property = await Property.findByPk(args.propertyId);
+    const property = await Property.findByPk(args.propertyId);
     if (!property) {
       throw new Error('Propiedad no encontrada');
     }
@@ -27,7 +27,7 @@ export class BookingService {
       throw new Error('Número de huéspedes excede la capacidad máxima');
     }
 
-    var overlappingBookings = await Booking.findAll({
+    const overlappingBookings = await Booking.findAll({
       where: {
         propertyId: args.propertyId,
         status: 'CONFIRMED',
@@ -40,7 +40,7 @@ export class BookingService {
       throw new Error('Las fechas no están disponibles (reservas confirmadas)');
     }
 
-    var overlappingBlocks = await BlockedDate.findAll({
+    const overlappingBlocks = await BlockedDate.findAll({
       where: {
         propertyId: args.propertyId,
         startDate: { [Op.lte]: args.endDate },
@@ -52,14 +52,14 @@ export class BookingService {
       throw new Error('Las fechas no están disponibles (fechas bloqueadas)');
     }
 
-    var nights = days;
+    let nights = days;
     if (nights <= 0) {
       nights = 1;
     }
 
-    var totalPrice = Number(property.basePricePerNight) * nights;
+    const totalPrice = Number(property.basePricePerNight) * nights;
 
-    var booking = await Booking.create({
+    const booking = await Booking.create({
       propertyId: args.propertyId,
       userId: currentUser.userId,
       startDate: args.startDate,
@@ -76,9 +76,9 @@ export class BookingService {
     ctx: GraphQLContext,
     args: { id: number; status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' },
   ) {
-    var currentUser = requireRole(ctx, 'PROPIETARIO');
+    const currentUser = requireRole(ctx, 'PROPIETARIO');
 
-    var booking = await Booking.findByPk(args.id, {
+    const booking = await Booking.findByPk(args.id, {
       include: [{ model: Property, as: 'property' }],
     });
 
@@ -86,13 +86,14 @@ export class BookingService {
       throw new Error('Reserva no encontrada');
     }
 
-    var property: any = (booking as any).property;
+    const bookingWithProperty = booking as Booking & { property?: Property };
+    const property = bookingWithProperty.property;
     if (!property || property.ownerId !== currentUser.userId) {
       throw new Error('No autorizado para cambiar el estado de esta reserva');
     }
 
     if (args.status === 'CONFIRMED') {
-      var overlappingBookings = await Booking.findAll({
+      const overlappingBookings = await Booking.findAll({
         where: {
           propertyId: booking.propertyId,
           status: 'CONFIRMED',
@@ -106,7 +107,7 @@ export class BookingService {
         throw new Error('No se puede confirmar, hay otra reserva confirmada solapada');
       }
 
-      var overlappingBlocks = await BlockedDate.findAll({
+      const overlappingBlocks = await BlockedDate.findAll({
         where: {
           propertyId: booking.propertyId,
           startDate: { [Op.lte]: booking.endDate },

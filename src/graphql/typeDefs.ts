@@ -69,13 +69,15 @@ export const typeDefs = gql`
     _health: String!
     account: User
 
-    myProperties: [Property!]!
+    myProperties(page: Int, pageSize: Int): [Property!]!
     property(id: ID!): Property
 
     searchAvailableProperties(
       start: String!
       end: String!
       guests: Int!
+      page: Int
+      pageSize: Int
     ): [Property!]!
   }
 

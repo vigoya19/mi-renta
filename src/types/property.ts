@@ -1,18 +1,15 @@
-// src/types/property.ts
-
-// Args para Query.property(id: ID!)
 export interface PropertyByIdArgs {
   id: string;
 }
 
-// Args para Query.searchAvailableProperties(start, end, guests)
 export interface SearchAvailablePropertiesArgs {
   start: string;
   end: string;
   guests: number;
+  page?: number;
+  pageSize?: number;
 }
 
-// Args para Mutation.createProperty
 export interface CreatePropertyArgs {
   title: string;
   description?: string;
@@ -20,7 +17,6 @@ export interface CreatePropertyArgs {
   basePricePerNight: number;
 }
 
-// Args para Mutation.updateProperty
 export interface UpdatePropertyArgs {
   id: string;
   title?: string;
@@ -29,7 +25,11 @@ export interface UpdatePropertyArgs {
   basePricePerNight?: number;
 }
 
-// Args para Mutation.deleteProperty
 export interface DeletePropertyArgs {
   id: string;
+}
+
+export interface MyPropertiesArgs {
+  page?: number;
+  pageSize?: number;
 }

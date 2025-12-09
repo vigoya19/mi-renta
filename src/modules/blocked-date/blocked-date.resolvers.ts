@@ -4,18 +4,20 @@ import { BlockedDate } from '../../models/blocked-date.model';
 
 import { Resolver, EmptyArgs } from '../../types/resolvers';
 import { CreateBlockedDateArgs } from '../../types/blocked-date';
+import { validateDto } from '../../common/validation';
+import { CreateBlockedDateDto } from '../../dtos/blocked-date.dto';
 
 const createBlockedDateResolver: Resolver<
   unknown,
   CreateBlockedDateArgs,
   BlockedDate
 > = (_parent, args, ctx) => {
-  const propertyId = parseInt(args.propertyId, 10);
+  const dto = validateDto(CreateBlockedDateDto, args);
 
   return ctx.container.blockedDateService.createBlockedDate(ctx, {
-    propertyId,
-    startDate: args.startDate,
-    endDate: args.endDate,
+    propertyId: dto.propertyId,
+    startDate: dto.startDate,
+    endDate: dto.endDate,
   });
 };
 

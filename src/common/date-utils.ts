@@ -5,17 +5,17 @@ export function rangesOverlap(
   startB: string,
   endB: string,
 ): boolean {
-  var aStart = new Date(startA).getTime();
-  var aEnd = new Date(endA).getTime();
-  var bStart = new Date(startB).getTime();
-  var bEnd = new Date(endB).getTime();
+  const aStart = new Date(startA).getTime();
+  const aEnd = new Date(endA).getTime();
+  const bStart = new Date(startB).getTime();
+  const bEnd = new Date(endB).getTime();
 
   return aStart <= bEnd && bStart <= aEnd;
 }
 
 export function diffInDays(start: string, end: string): number {
-  var oneDayMs = 24 * 60 * 60 * 1000;
-  var startMs = new Date(start).getTime();
-  var endMs = new Date(end).getTime();
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  const startMs = new Date(start).getTime();
+  const endMs = new Date(end).getTime();
   return Math.round((endMs - startMs) / oneDayMs);
 }

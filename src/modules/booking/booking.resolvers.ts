@@ -8,19 +8,24 @@ import {
   CreateBookingArgs,
   UpdateBookingStatusArgs,
 } from '../../types/booking';
+import { validateDto } from '../../common/validation';
+import {
+  CreateBookingDto,
+  UpdateBookingStatusDto,
+} from '../../dtos/booking.dto';
 
 const createBookingResolver: Resolver<
   unknown,
   CreateBookingArgs,
   Booking
 > = (_parent, args, ctx) => {
-  const propertyId = parseInt(args.propertyId, 10);
+  const dto = validateDto(CreateBookingDto, args);
 
   return ctx.container.bookingService.createBooking(ctx, {
-    propertyId,
-    startDate: args.startDate,
-    endDate: args.endDate,
-    guests: args.guests,
+    propertyId: dto.propertyId,
+    startDate: dto.startDate,
+    endDate: dto.endDate,
+    guests: dto.guests,
   });
 };
 
@@ -29,11 +34,11 @@ const updateBookingStatusResolver: Resolver<
   UpdateBookingStatusArgs,
   Booking
 > = (_parent, args, ctx) => {
-  const id = parseInt(args.id, 10);
+  const dto = validateDto(UpdateBookingStatusDto, args);
 
   return ctx.container.bookingService.updateBookingStatus(ctx, {
-    id,
-    status: args.status,
+    id: dto.id,
+    status: dto.status,
   });
 };
 
