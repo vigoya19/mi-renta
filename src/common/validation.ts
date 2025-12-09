@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import { validateSync, ValidationError } from 'class-validator';
+import { UserInputError } from 'apollo-server-express';
 
 function formatErrors(errors: ValidationError[]): string {
   const messages: string[] = [];
@@ -25,7 +26,7 @@ export function validateDto<T>(cls: new () => T, payload: unknown): T {
   });
 
   if (validationErrors.length > 0) {
-    throw new Error(formatErrors(validationErrors));
+    throw new UserInputError(formatErrors(validationErrors));
   }
 
   return instance;

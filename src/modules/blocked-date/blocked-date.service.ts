@@ -6,6 +6,7 @@ import { GraphQLContext } from '../../types/context';
 import { diffInDays } from '../../common/date-utils';
 import { Op } from 'sequelize';
 import { ERROR_MESSAGES } from '../../common/error-messages';
+import { ApolloError } from 'apollo-server-express';
 
 export class BlockedDateService {
   async createBlockedDate(
@@ -16,15 +17,15 @@ export class BlockedDateService {
 
     const days = diffInDays(args.startDate, args.endDate);
     if (days <= 0) {
-      throw new Error(ERROR_MESSAGES.BLOCK.INVALID_DATE_RANGE);
+      throw new ApolloError(ERROR_MESSAGES.BLOCK.INVALID_DATE_RANGE, 'BAD_REQUEST');
     }
 
     const property = await Property.findByPk(args.propertyId);
     if (!property) {
-      throw new Error(ERROR_MESSAGES.BLOCK.PROPERTY_NOT_FOUND);
+      throw new ApolloError(ERROR_MESSAGES.BLOCK.PROPERTY_NOT_FOUND, 'NOT_FOUND');
     }
     if (property.ownerId !== currentUser.userId) {
-      throw new Error(ERROR_MESSAGES.BLOCK.UNAUTHORIZED);
+      throw new ApolloError(ERROR_MESSAGES.BLOCK.UNAUTHORIZED, 'FORBIDDEN');
     }
 
     const overlappingBookings = await Booking.findAll({
@@ -37,7 +38,7 @@ export class BlockedDateService {
     });
 
     if (overlappingBookings.length > 0) {
-      throw new Error(ERROR_MESSAGES.BLOCK.OVERLAP_BOOKINGS);
+      throw new ApolloError(ERROR_MESSAGES.BLOCK.OVERLAP_BOOKINGS, 'CONFLICT');
     }
 
     const overlappingBlocks = await BlockedDate.findAll({
@@ -49,7 +50,7 @@ export class BlockedDateService {
     });
 
     if (overlappingBlocks.length > 0) {
-      throw new Error(ERROR_MESSAGES.BLOCK.OVERLAP_BLOCKS);
+      throw new ApolloError(ERROR_MESSAGES.BLOCK.OVERLAP_BLOCKS, 'CONFLICT');
     }
 
     const blocked = await BlockedDate.create({

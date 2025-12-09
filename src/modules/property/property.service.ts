@@ -8,6 +8,7 @@ import { GraphQLContext } from '../../types/context';
 import { diffInDays } from '../../common/date-utils';
 import { PaginationParams } from '../../types/pagination';
 import { ERROR_MESSAGES } from '../../common/error-messages';
+import { ApolloError } from 'apollo-server-express';
 
 export class PropertyService {
   async getMyProperties(ctx: GraphQLContext, pagination: PaginationParams) {
@@ -63,11 +64,11 @@ export class PropertyService {
     const property = await Property.findByPk(id);
 
     if (!property) {
-      throw new Error(ERROR_MESSAGES.PROPERTY.NOT_FOUND);
+      throw new ApolloError(ERROR_MESSAGES.PROPERTY.NOT_FOUND, 'NOT_FOUND');
     }
 
     if (property.ownerId !== currentUser.userId) {
-      throw new Error(ERROR_MESSAGES.PROPERTY.UNAUTHORIZED_UPDATE);
+      throw new ApolloError(ERROR_MESSAGES.PROPERTY.UNAUTHORIZED_UPDATE, 'FORBIDDEN');
     }
 
     if (typeof data.title !== 'undefined') {
@@ -94,11 +95,11 @@ export class PropertyService {
     const property = await Property.findByPk(id);
 
     if (!property) {
-      throw new Error(ERROR_MESSAGES.PROPERTY.NOT_FOUND);
+      throw new ApolloError(ERROR_MESSAGES.PROPERTY.NOT_FOUND, 'NOT_FOUND');
     }
 
     if (property.ownerId !== currentUser.userId) {
-      throw new Error(ERROR_MESSAGES.PROPERTY.UNAUTHORIZED_DELETE);
+      throw new ApolloError(ERROR_MESSAGES.PROPERTY.UNAUTHORIZED_DELETE, 'FORBIDDEN');
     }
 
     await property.destroy();
@@ -114,10 +115,9 @@ export class PropertyService {
   ) {
     const days = diffInDays(start, end);
     if (days <= 0) {
-      throw new Error(ERROR_MESSAGES.BOOKING.INVALID_DATE_RANGE);
+      throw new ApolloError(ERROR_MESSAGES.BOOKING.INVALID_DATE_RANGE, 'BAD_REQUEST');
     }
 
-    // 1) Propiedades cuyo maxGuests >= guests
     const properties = await Property.findAll({
       where: {
         maxGuests: { [Op.gte]: guests },
@@ -132,7 +132,6 @@ export class PropertyService {
       return p.id;
     });
 
-    // 2) Reservas confirmadas solapadas
     const overlappingBookings = await Booking.findAll({
       where: {
         propertyId: { [Op.in]: propertyIds },
@@ -147,7 +146,6 @@ export class PropertyService {
       bookedPropertyIds[b.propertyId] = true;
     });
 
-    // 3) Bloqueos solapados
     const overlappingBlocks = await BlockedDate.findAll({
       where: {
         propertyId: { [Op.in]: propertyIds },
@@ -161,7 +159,6 @@ export class PropertyService {
       blockedPropertyIds[bd.propertyId] = true;
     });
 
-    // 4) Filtrar propiedades que no estén en booked ni blocked
     const available = properties.filter(function (p) {
       return !bookedPropertyIds[p.id] && !blockedPropertyIds[p.id];
     });

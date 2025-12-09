@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { User } from '../../models/user.model';
 import { signToken } from './jwt';
 import { ERROR_MESSAGES } from '../../common/error-messages';
+import { ApolloError, AuthenticationError } from 'apollo-server-express';
 
 export class AuthService {
   async register(
@@ -12,7 +13,7 @@ export class AuthService {
   ) {
     const existing = await User.findOne({ where: { email } });
     if (existing) {
-      throw new Error(ERROR_MESSAGES.AUTH.EMAIL_IN_USE);
+      throw new ApolloError(ERROR_MESSAGES.AUTH.EMAIL_IN_USE, 'BAD_REQUEST');
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -32,12 +33,12 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      throw new Error(ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
+      throw new AuthenticationError(ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
     }
 
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) {
-      throw new Error(ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
+      throw new AuthenticationError(ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
     }
 
     const token = signToken({ userId: user.id, role: user.role });

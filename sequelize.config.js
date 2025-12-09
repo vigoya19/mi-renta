@@ -1,4 +1,3 @@
-// sequelize.config.js
 require('dotenv').config();
 
 module.exports = {
@@ -11,5 +10,4 @@ module.exports = {
     dialect: 'mysql',
     logging: false
   }
-  // podrías agregar test / production si quieres
 };

@@ -35,7 +35,6 @@ function initAssociations(): void {
     as: 'owner',
   });
 
-  // Property -> Bookings
   Property.hasMany(Booking, {
     foreignKey: 'propertyId',
     as: 'bookings',
@@ -45,7 +44,6 @@ function initAssociations(): void {
     as: 'property',
   });
 
-  // User (VIAJERO) -> Bookings
   User.hasMany(Booking, {
     foreignKey: 'userId',
     as: 'bookings',
@@ -55,7 +53,6 @@ function initAssociations(): void {
     as: 'traveler',
   });
 
-  // Property -> BlockedDates
   Property.hasMany(BlockedDate, {
     foreignKey: 'propertyId',
     as: 'blockedDates',
