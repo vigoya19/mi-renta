@@ -8,8 +8,8 @@ export function normalizePagination(
   args: PaginationArgs | undefined,
   defaults?: { page?: number; pageSize?: number },
 ): PaginationParams {
-  const page = (args && args.page) || defaults?.page || 1;
-  const pageSize = (args && args.pageSize) || defaults?.pageSize || 10;
+  const page = args?.page ?? defaults?.page ?? 1;
+  const pageSize = args?.pageSize ?? defaults?.pageSize ?? 10;
 
   if (!isPositiveInteger(page)) {
     throw new Error('El parámetro page debe ser un entero positivo');

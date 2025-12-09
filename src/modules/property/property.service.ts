@@ -1,8 +1,8 @@
-import { Booking } from '../../models/booking.model';
-import { BlockedDate } from '../../models/blocked-date.model';
-import { Op } from 'sequelize';
+import { Booking, BookingAttributes } from '../../models/booking.model';
+import { BlockedDate, BlockedDateAttributes } from '../../models/blocked-date.model';
+import { Op, WhereAttributeHash } from 'sequelize';
 
-import { Property } from '../../models/property.model';
+import { Property, PropertyAttributes } from '../../models/property.model';
 import { requireRole } from '../../common/auth-guards';
 import { GraphQLContext } from '../../types/context';
 import { diffInDays } from '../../common/date-utils';
@@ -11,9 +11,10 @@ import { PaginationParams } from '../../types/pagination';
 export class PropertyService {
   async getMyProperties(ctx: GraphQLContext, pagination: PaginationParams) {
     const currentUser = requireRole(ctx, 'PROPIETARIO');
+    const where = { ownerId: currentUser.userId } as WhereAttributeHash<PropertyAttributes>;
 
     return Property.findAll({
-      where: { ownerId: currentUser.userId },
+      where,
       order: [['id', 'ASC']],
       limit: pagination.limit,
       offset: pagination.offset,
@@ -119,7 +120,7 @@ export class PropertyService {
     const properties = await Property.findAll({
       where: {
         maxGuests: { [Op.gte]: guests },
-      },
+      } as WhereAttributeHash<PropertyAttributes>,
     });
 
     if (properties.length === 0) {
@@ -137,7 +138,7 @@ export class PropertyService {
         status: 'CONFIRMED',
         startDate: { [Op.lte]: end },
         endDate: { [Op.gte]: start },
-      },
+      } as WhereAttributeHash<BookingAttributes>,
     });
 
     const bookedPropertyIds: { [key: number]: boolean } = {};
@@ -151,7 +152,7 @@ export class PropertyService {
         propertyId: { [Op.in]: propertyIds },
         startDate: { [Op.lte]: end },
         endDate: { [Op.gte]: start },
-      },
+      } as WhereAttributeHash<BlockedDateAttributes>,
     });
 
     const blockedPropertyIds: { [key: number]: boolean } = {};
