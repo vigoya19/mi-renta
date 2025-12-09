@@ -1,6 +1,6 @@
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-var levelOrder: Record<LogLevel, number> = {
+const levelOrder: Record<LogLevel, number> = {
   debug: 10,
   info: 20,
   warn: 30,
@@ -8,7 +8,7 @@ var levelOrder: Record<LogLevel, number> = {
 };
 
 function currentLevel(): LogLevel {
-  var raw = process.env.LOG_LEVEL || 'info';
+  const raw = process.env.LOG_LEVEL || 'info';
   if (raw === 'debug' || raw === 'info' || raw === 'warn' || raw === 'error') {
     return raw;
   }
@@ -23,7 +23,7 @@ function log(level: LogLevel, message: string, meta?: Record<string, unknown>): 
   if (!shouldLog(level)) {
     return;
   }
-  var prefix = '[' + new Date().toISOString() + '] ' + level.toUpperCase() + ': ';
+  const prefix = '[' + new Date().toISOString() + '] ' + level.toUpperCase() + ': ';
   if (meta && Object.keys(meta).length > 0) {
     // eslint-disable-next-line no-console
     console[level](prefix + message, meta);

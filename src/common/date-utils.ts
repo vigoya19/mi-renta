@@ -1,11 +1,11 @@
 
 function parseDateToUtcMs(date: string): number {
-  var parts = date.split('-').map(function (p) {
+  const parts = date.split('-').map(function (p) {
     return Number(p);
   });
-  var year = parts[0];
-  var monthIndex = parts[1] - 1;
-  var day = parts[2];
+  const year = parts[0];
+  const monthIndex = parts[1] - 1;
+  const day = parts[2];
   return Date.UTC(year, monthIndex, day);
 }
 
