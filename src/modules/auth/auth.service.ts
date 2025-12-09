@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { User } from '../../models/user.model';
 import { signToken } from './jwt';
+import { ERROR_MESSAGES } from '../../common/error-messages';
 
 export class AuthService {
   async register(
@@ -11,7 +12,7 @@ export class AuthService {
   ) {
     const existing = await User.findOne({ where: { email } });
     if (existing) {
-      throw new Error('El email ya está registrado');
+      throw new Error(ERROR_MESSAGES.AUTH.EMAIL_IN_USE);
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -31,12 +32,12 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      throw new Error('Credenciales inválidas');
+      throw new Error(ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
     }
 
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) {
-      throw new Error('Credenciales inválidas');
+      throw new Error(ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
     }
 
     const token = signToken({ userId: user.id, role: user.role });

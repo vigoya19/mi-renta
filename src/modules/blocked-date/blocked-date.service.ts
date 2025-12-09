@@ -5,6 +5,7 @@ import { requireRole } from '../../common/auth-guards';
 import { GraphQLContext } from '../../types/context';
 import { diffInDays } from '../../common/date-utils';
 import { Op } from 'sequelize';
+import { ERROR_MESSAGES } from '../../common/error-messages';
 
 export class BlockedDateService {
   async createBlockedDate(
@@ -15,15 +16,15 @@ export class BlockedDateService {
 
     const days = diffInDays(args.startDate, args.endDate);
     if (days <= 0) {
-      throw new Error('El rango de fechas es inválido (start >= end)');
+      throw new Error(ERROR_MESSAGES.BLOCK.INVALID_DATE_RANGE);
     }
 
     const property = await Property.findByPk(args.propertyId);
     if (!property) {
-      throw new Error('Propiedad no encontrada');
+      throw new Error(ERROR_MESSAGES.BLOCK.PROPERTY_NOT_FOUND);
     }
     if (property.ownerId !== currentUser.userId) {
-      throw new Error('No autorizado para bloquear esta propiedad');
+      throw new Error(ERROR_MESSAGES.BLOCK.UNAUTHORIZED);
     }
 
     const overlappingBookings = await Booking.findAll({
@@ -36,9 +37,7 @@ export class BlockedDateService {
     });
 
     if (overlappingBookings.length > 0) {
-      throw new Error(
-        'No se puede bloquear el rango porque se solapa con reservas confirmadas',
-      );
+      throw new Error(ERROR_MESSAGES.BLOCK.OVERLAP_BOOKINGS);
     }
 
     const overlappingBlocks = await BlockedDate.findAll({
@@ -50,9 +49,7 @@ export class BlockedDateService {
     });
 
     if (overlappingBlocks.length > 0) {
-      throw new Error(
-        'La propiedad ya tiene un bloqueo que se solapa con este rango de fechas',
-      );
+      throw new Error(ERROR_MESSAGES.BLOCK.OVERLAP_BLOCKS);
     }
 
     const blocked = await BlockedDate.create({

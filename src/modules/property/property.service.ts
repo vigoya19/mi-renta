@@ -7,6 +7,7 @@ import { requireRole } from '../../common/auth-guards';
 import { GraphQLContext } from '../../types/context';
 import { diffInDays } from '../../common/date-utils';
 import { PaginationParams } from '../../types/pagination';
+import { ERROR_MESSAGES } from '../../common/error-messages';
 
 export class PropertyService {
   async getMyProperties(ctx: GraphQLContext, pagination: PaginationParams) {
@@ -62,11 +63,11 @@ export class PropertyService {
     const property = await Property.findByPk(id);
 
     if (!property) {
-      throw new Error('Propiedad no encontrada');
+      throw new Error(ERROR_MESSAGES.PROPERTY.NOT_FOUND);
     }
 
     if (property.ownerId !== currentUser.userId) {
-      throw new Error('No autorizado para modificar esta propiedad');
+      throw new Error(ERROR_MESSAGES.PROPERTY.UNAUTHORIZED_UPDATE);
     }
 
     if (typeof data.title !== 'undefined') {
@@ -93,11 +94,11 @@ export class PropertyService {
     const property = await Property.findByPk(id);
 
     if (!property) {
-      throw new Error('Propiedad no encontrada');
+      throw new Error(ERROR_MESSAGES.PROPERTY.NOT_FOUND);
     }
 
     if (property.ownerId !== currentUser.userId) {
-      throw new Error('No autorizado para eliminar esta propiedad');
+      throw new Error(ERROR_MESSAGES.PROPERTY.UNAUTHORIZED_DELETE);
     }
 
     await property.destroy();
@@ -113,7 +114,7 @@ export class PropertyService {
   ) {
     const days = diffInDays(start, end);
     if (days <= 0) {
-      throw new Error('El rango de fechas es inválido (start >= end)');
+      throw new Error(ERROR_MESSAGES.BOOKING.INVALID_DATE_RANGE);
     }
 
     // 1) Propiedades cuyo maxGuests >= guests

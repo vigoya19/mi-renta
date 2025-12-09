@@ -79,8 +79,8 @@ export async function initDb(): Promise<void> {
   await sequelize.authenticate();
   console.log('✅ Conexión a MySQL establecida correctamente');
 
-  await sequelize.sync({ alter: true });
-  console.log('✅ Modelos sincronizados con la base de datos');
+  await sequelize.sync();
+  console.log('✅ Modelos sincronizados con la base de datos (sin alter)');
 }
 
 export { User, Property, Booking, BlockedDate };

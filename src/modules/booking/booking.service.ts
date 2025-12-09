@@ -5,6 +5,7 @@ import { GraphQLContext } from '../../types/context';
 import { requireRole } from '../../common/auth-guards';
 import { diffInDays } from '../../common/date-utils';
 import { Op } from 'sequelize';
+import { ERROR_MESSAGES } from '../../common/error-messages';
 
 export class BookingService {
   async createBooking(
@@ -15,16 +16,16 @@ export class BookingService {
 
     const days = diffInDays(args.startDate, args.endDate);
     if (days <= 0) {
-      throw new Error('El rango de fechas es inválido (start >= end)');
+      throw new Error(ERROR_MESSAGES.BOOKING.INVALID_DATE_RANGE);
     }
 
     const property = await Property.findByPk(args.propertyId);
     if (!property) {
-      throw new Error('Propiedad no encontrada');
+      throw new Error(ERROR_MESSAGES.BOOKING.PROPERTY_NOT_FOUND);
     }
 
     if (args.guests > property.maxGuests) {
-      throw new Error('Número de huéspedes excede la capacidad máxima');
+      throw new Error(ERROR_MESSAGES.BOOKING.CAPACITY_EXCEEDED);
     }
 
     const overlappingBookings = await Booking.findAll({
@@ -37,7 +38,7 @@ export class BookingService {
     });
 
     if (overlappingBookings.length > 0) {
-      throw new Error('Las fechas no están disponibles (reservas confirmadas)');
+      throw new Error(ERROR_MESSAGES.BOOKING.DATES_UNAVAILABLE_BOOKING);
     }
 
     const overlappingBlocks = await BlockedDate.findAll({
@@ -49,7 +50,7 @@ export class BookingService {
     });
 
     if (overlappingBlocks.length > 0) {
-      throw new Error('Las fechas no están disponibles (fechas bloqueadas)');
+      throw new Error(ERROR_MESSAGES.BOOKING.DATES_UNAVAILABLE_BLOCKED);
     }
 
     let nights = days;
@@ -83,13 +84,13 @@ export class BookingService {
     });
 
     if (!booking) {
-      throw new Error('Reserva no encontrada');
+      throw new Error(ERROR_MESSAGES.BOOKING.NOT_FOUND);
     }
 
     const bookingWithProperty = booking as Booking & { property?: Property };
     const property = bookingWithProperty.property;
     if (!property || property.ownerId !== currentUser.userId) {
-      throw new Error('No autorizado para cambiar el estado de esta reserva');
+      throw new Error(ERROR_MESSAGES.BOOKING.UNAUTHORIZED_STATUS_CHANGE);
     }
 
     if (args.status === 'CONFIRMED') {
@@ -104,7 +105,7 @@ export class BookingService {
       });
 
       if (overlappingBookings.length > 0) {
-        throw new Error('No se puede confirmar, hay otra reserva confirmada solapada');
+        throw new Error(ERROR_MESSAGES.BOOKING.CONFLICT_BOOKING);
       }
 
       const overlappingBlocks = await BlockedDate.findAll({
@@ -116,7 +117,7 @@ export class BookingService {
       });
 
       if (overlappingBlocks.length > 0) {
-        throw new Error('No se puede confirmar, hay bloqueos solapados');
+        throw new Error(ERROR_MESSAGES.BOOKING.CONFLICT_BLOCK);
       }
     }
 
