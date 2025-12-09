@@ -17,7 +17,7 @@ export class BlockedDateService {
 
     const days = diffInDays(args.startDate, args.endDate);
     if (days <= 0) {
-      throw new ApolloError(ERROR_MESSAGES.BLOCK.INVALID_DATE_RANGE, 'BAD_REQUEST');
+      throw new ApolloError(ERROR_MESSAGES.BLOCK.INVALID_DATE_RANGE, 'BAD_USER_INPUT');
     }
 
     const property = await Property.findByPk(args.propertyId);

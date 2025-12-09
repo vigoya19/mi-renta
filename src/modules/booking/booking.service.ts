@@ -17,7 +17,7 @@ export class BookingService {
 
     const days = diffInDays(args.startDate, args.endDate);
     if (days <= 0) {
-      throw new ApolloError(ERROR_MESSAGES.BOOKING.INVALID_DATE_RANGE, 'BAD_REQUEST');
+      throw new ApolloError(ERROR_MESSAGES.BOOKING.INVALID_DATE_RANGE, 'BAD_USER_INPUT');
     }
 
     const property = await Property.findByPk(args.propertyId);
@@ -26,7 +26,7 @@ export class BookingService {
     }
 
     if (args.guests > property.maxGuests) {
-      throw new ApolloError(ERROR_MESSAGES.BOOKING.CAPACITY_EXCEEDED, 'BAD_REQUEST');
+      throw new ApolloError(ERROR_MESSAGES.BOOKING.CAPACITY_EXCEEDED, 'BAD_USER_INPUT');
     }
 
     const overlappingBookings = await Booking.findAll({

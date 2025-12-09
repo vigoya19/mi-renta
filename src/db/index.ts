@@ -1,4 +1,4 @@
-import { Sequelize } from 'sequelize';
+import { ModelCtor, Sequelize } from 'sequelize';
 import { env } from '../config/env';
 
 import { initUserModel, User } from '../models/user.model';
@@ -26,38 +26,43 @@ export function getSequelize(): Sequelize {
 }
 
 function initAssociations(): void {
-  User.hasMany(Property, {
+  const UserModel = User as unknown as ModelCtor<User>;
+  const PropertyModel = Property as unknown as ModelCtor<Property>;
+  const BookingModel = Booking as unknown as ModelCtor<Booking>;
+  const BlockedDateModel = BlockedDate as unknown as ModelCtor<BlockedDate>;
+
+  UserModel.hasMany(PropertyModel, {
     foreignKey: 'ownerId',
     as: 'properties',
   });
-  Property.belongsTo(User, {
+  PropertyModel.belongsTo(UserModel, {
     foreignKey: 'ownerId',
     as: 'owner',
   });
 
-  Property.hasMany(Booking, {
+  PropertyModel.hasMany(BookingModel, {
     foreignKey: 'propertyId',
     as: 'bookings',
   });
-  Booking.belongsTo(Property, {
+  BookingModel.belongsTo(PropertyModel, {
     foreignKey: 'propertyId',
     as: 'property',
   });
 
-  User.hasMany(Booking, {
+  UserModel.hasMany(BookingModel, {
     foreignKey: 'userId',
     as: 'bookings',
   });
-  Booking.belongsTo(User, {
+  BookingModel.belongsTo(UserModel, {
     foreignKey: 'userId',
     as: 'traveler',
   });
 
-  Property.hasMany(BlockedDate, {
+  PropertyModel.hasMany(BlockedDateModel, {
     foreignKey: 'propertyId',
     as: 'blockedDates',
   });
-  BlockedDate.belongsTo(Property, {
+  BlockedDateModel.belongsTo(PropertyModel, {
     foreignKey: 'propertyId',
     as: 'property',
   });
@@ -76,8 +81,12 @@ export async function initDb(): Promise<void> {
   await sequelize.authenticate();
   console.log('✅ Conexión a MySQL establecida correctamente');
 
-  await sequelize.sync();
-  console.log('✅ Modelos sincronizados con la base de datos (sin alter)');
+  if (process.env.NODE_ENV === 'development') {
+    await sequelize.sync();
+    console.log('✅ Modelos sincronizados con la base de datos (dev sync habilitado)');
+  } else {
+    console.log('ℹ️ sync() omitido fuera de development; usa migraciones para cambios de esquema');
+  }
 }
 
 export { User, Property, Booking, BlockedDate };

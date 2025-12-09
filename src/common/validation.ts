@@ -3,19 +3,28 @@ import { plainToInstance } from 'class-transformer';
 import { validateSync, ValidationError } from 'class-validator';
 import { UserInputError } from 'apollo-server-express';
 
-function formatErrors(errors: ValidationError[]): string {
-  const messages: string[] = [];
+interface FieldError {
+  field: string;
+  messages: string[];
+}
+
+function flattenErrors(errors: ValidationError[], parentPath?: string): FieldError[] {
+  const result: FieldError[] = [];
 
   errors.forEach(function (err) {
+    const fieldPath = parentPath ? parentPath + '.' + err.property : err.property;
     if (err.constraints) {
-      messages.push.apply(messages, Object.values(err.constraints));
+      result.push({
+        field: fieldPath,
+        messages: Object.values(err.constraints),
+      });
     }
     if (err.children && err.children.length > 0) {
-      messages.push(formatErrors(err.children));
+      result.push.apply(result, flattenErrors(err.children, fieldPath));
     }
   });
 
-  return messages.join('; ');
+  return result;
 }
 
 export function validateDto<T>(cls: new () => T, payload: unknown): T {
@@ -26,7 +35,8 @@ export function validateDto<T>(cls: new () => T, payload: unknown): T {
   });
 
   if (validationErrors.length > 0) {
-    throw new UserInputError(formatErrors(validationErrors));
+    const formatted = flattenErrors(validationErrors);
+    throw new UserInputError('Validación fallida', { validationErrors: formatted });
   }
 
   return instance;

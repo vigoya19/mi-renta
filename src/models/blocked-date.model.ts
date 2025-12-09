@@ -30,6 +30,9 @@ export class BlockedDate
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  public save!: () => Promise<this>;
+  public destroy!: () => Promise<void>;
 }
 
 export function initBlockedDateModel(sequelize: Sequelize): void {

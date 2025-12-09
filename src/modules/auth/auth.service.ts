@@ -13,7 +13,7 @@ export class AuthService {
   ) {
     const existing = await User.findOne({ where: { email } });
     if (existing) {
-      throw new ApolloError(ERROR_MESSAGES.AUTH.EMAIL_IN_USE, 'BAD_REQUEST');
+      throw new ApolloError(ERROR_MESSAGES.AUTH.EMAIL_IN_USE, 'BAD_USER_INPUT');
     }
 
     const passwordHash = await bcrypt.hash(password, 10);

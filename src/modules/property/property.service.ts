@@ -9,6 +9,7 @@ import { diffInDays } from '../../common/date-utils';
 import { PaginationParams } from '../../types/pagination';
 import { ERROR_MESSAGES } from '../../common/error-messages';
 import { ApolloError } from 'apollo-server-express';
+import { getSequelize } from '../../db';
 
 export class PropertyService {
   async getMyProperties(ctx: GraphQLContext, pagination: PaginationParams) {
@@ -115,57 +116,44 @@ export class PropertyService {
   ) {
     const days = diffInDays(start, end);
     if (days <= 0) {
-      throw new ApolloError(ERROR_MESSAGES.BOOKING.INVALID_DATE_RANGE, 'BAD_REQUEST');
+      throw new ApolloError(ERROR_MESSAGES.BOOKING.INVALID_DATE_RANGE, 'BAD_USER_INPUT');
     }
 
-    const properties = await Property.findAll({
-      where: {
-        maxGuests: { [Op.gte]: guests },
-      } as WhereAttributeHash<PropertyAttributes>,
-    });
+    const sequelize = getSequelize();
+    const available = await sequelize.query<Property>(
+      `
+      SELECT *
+      FROM Properties p
+      WHERE p.maxGuests >= :guests
+        AND NOT EXISTS (
+          SELECT 1 FROM Bookings b
+          WHERE b.propertyId = p.id
+            AND b.status = 'CONFIRMED'
+            AND b.startDate <= :end
+            AND b.endDate >= :start
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM BlockedDates bd
+          WHERE bd.propertyId = p.id
+            AND bd.startDate <= :end
+            AND bd.endDate >= :start
+        )
+      ORDER BY p.id ASC
+      LIMIT :limit OFFSET :offset
+    `,
+      {
+        replacements: {
+          guests,
+          start,
+          end,
+          limit: pagination.limit,
+          offset: pagination.offset,
+        },
+        model: Property,
+        mapToModel: true,
+      },
+    );
 
-    if (properties.length === 0) {
-      return [];
-    }
-
-    const propertyIds = properties.map(function (p) {
-      return p.id;
-    });
-
-    const overlappingBookings = await Booking.findAll({
-      where: {
-        propertyId: { [Op.in]: propertyIds },
-        status: 'CONFIRMED',
-        startDate: { [Op.lte]: end },
-        endDate: { [Op.gte]: start },
-      } as WhereAttributeHash<BookingAttributes>,
-    });
-
-    const bookedPropertyIds: { [key: number]: boolean } = {};
-    overlappingBookings.forEach(function (b) {
-      bookedPropertyIds[b.propertyId] = true;
-    });
-
-    const overlappingBlocks = await BlockedDate.findAll({
-      where: {
-        propertyId: { [Op.in]: propertyIds },
-        startDate: { [Op.lte]: end },
-        endDate: { [Op.gte]: start },
-      } as WhereAttributeHash<BlockedDateAttributes>,
-    });
-
-    const blockedPropertyIds: { [key: number]: boolean } = {};
-    overlappingBlocks.forEach(function (bd) {
-      blockedPropertyIds[bd.propertyId] = true;
-    });
-
-    const available = properties.filter(function (p) {
-      return !bookedPropertyIds[p.id] && !blockedPropertyIds[p.id];
-    });
-
-    const sliceStart = pagination.offset;
-    const sliceEnd = pagination.offset + pagination.limit;
-
-    return available.slice(sliceStart, sliceEnd);
+    return available;
   }
 }

@@ -40,6 +40,9 @@ export class Booking
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  public save!: () => Promise<this>;
+  public destroy!: () => Promise<void>;
 }
 
 export function initBookingModel(sequelize: Sequelize): void {
