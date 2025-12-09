@@ -98,6 +98,24 @@ export class BookingService {
       throw new ApolloError(ERROR_MESSAGES.BOOKING.UNAUTHORIZED_STATUS_CHANGE, 'FORBIDDEN');
     }
 
+    const currentStatus = booking.status as 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+    const allowed: Record<typeof currentStatus, Array<typeof args.status>> = {
+      PENDING: ['CONFIRMED', 'CANCELLED'],
+      CONFIRMED: ['CANCELLED'],
+      CANCELLED: [],
+    };
+
+    if (args.status === currentStatus) {
+      return booking;
+    }
+
+    if (!allowed[currentStatus].includes(args.status)) {
+      throw new ApolloError(
+        ERROR_MESSAGES.BOOKING.INVALID_STATUS_TRANSITION,
+        'BAD_USER_INPUT',
+      );
+    }
+
     if (args.status === 'CONFIRMED') {
       const overlappingBookings = await Booking.findAll({
         where: {

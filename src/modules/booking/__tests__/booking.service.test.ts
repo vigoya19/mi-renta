@@ -151,6 +151,25 @@ describe('BookingService', () => {
     expect(res.status).toBe('CONFIRMED');
   });
 
+  test('updateBookingStatus rechaza transiciones inválidas', async () => {
+    (requireRole as jest.Mock).mockReturnValue({ userId: 2, role: 'PROPIETARIO' });
+    const { Booking } = require('../../../models/booking.model');
+    Booking.findByPk.mockResolvedValue({
+      id: 1,
+      propertyId: 1,
+      userId: 99,
+      status: 'CANCELLED',
+      startDate: '2024-01-01',
+      endDate: '2024-01-05',
+      property: { ownerId: 2 },
+      save: jest.fn(),
+    });
+
+    await expect(
+      bookingService.updateBookingStatus({} as any, { id: 1, status: 'CONFIRMED' }),
+    ).rejects.toThrow();
+  });
+
   test('createBooking valida propiedad existente y capacidad', async () => {
     (requireRole as jest.Mock).mockReturnValue({ userId: 10, role: 'VIAJERO' });
     const { Property } = require('../../../models/property.model');

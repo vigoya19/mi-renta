@@ -20,6 +20,7 @@ export const ERROR_MESSAGES = {
     UNAUTHORIZED_STATUS_CHANGE: 'No estás autorizado para cambiar el estado de esta reserva.',
     CONFLICT_BOOKING: 'No se puede confirmar, hay otra reserva confirmada solapada.',
     CONFLICT_BLOCK: 'No se puede confirmar, hay bloqueos solapados.',
+    INVALID_STATUS_TRANSITION: 'Transición de estado no permitida para la reserva.',
   },
   BLOCK: {
     INVALID_DATE_RANGE: 'El rango de fechas es inválido (start >= end).',
