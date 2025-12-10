@@ -13,6 +13,7 @@ Aplicación GraphQL para gestionar propiedades, reservas y bloqueos entre propie
    - `PORT`
    - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
    - `JWT_SECRET`
+   - Nota: se incluye un `.env` con credenciales de un MySQL 5.5 solo para probar el proyecto; ya tiene datos de ejemplo para validar el flujo rapido (no usar en produccion).
 2. Seleccionar versión de Node 12 con nvm (recomendado):
    ```bash
    nvm use 12.22.12
@@ -21,7 +22,6 @@ Aplicación GraphQL para gestionar propiedades, reservas y bloqueos entre propie
    ```bash
    npm install
    ```
-   > Si estás sin internet, instala previamente `graphql-voyager` cuando tengas conexión.
 4. Levantar en desarrollo:
    ```bash
    npm run dev
@@ -30,7 +30,7 @@ Aplicación GraphQL para gestionar propiedades, reservas y bloqueos entre propie
    ```bash
    npm test
    ```
-6. Build (puede fallar con TS 3.9 y typings modernos; recomendado actualizar TS si quieres compilar):
+6. Build:
    ```bash
    npm run build
    ```
