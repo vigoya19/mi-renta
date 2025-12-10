@@ -1,7 +1,7 @@
-import { AuthService } from '../modules/auth/auth.service';
-import { PropertyService } from '../modules/property/property.service';
-import { BlockedDateService } from '../modules/blocked-date/blocked-date.service';
-import { BookingService } from '../modules/booking/booking.service';
+import { AuthService } from "../modules/auth/auth.service";
+import { PropertyService } from "../modules/property/property.service";
+import { BlockedDateService } from "../modules/blocked-date/blocked-date.service";
+import { BookingService } from "../modules/booking/booking.service";
 
 export interface AppContainer {
   authService: AuthService;

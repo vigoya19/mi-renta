@@ -45,6 +45,12 @@ Aplicación GraphQL para gestionar propiedades, reservas y bloqueos entre propie
   npm run db:seed:undo
   ```
 
+- Migraciones en producci¢n (usa `.env` con `NODE_ENV=production` y `DB_*` apuntando a prod):
+  ```bash
+  set NODE_ENV=production; npm run db:migrate
+  npx sequelize db:migrate:status --env production
+  ```
+
 ## API GraphQL
 - Endpoint: `http://localhost:4000/graphql`
 - Documentación interactiva: abre el endpoint en el navegador y usa la pestaña **Docs** del sandbox.
@@ -199,6 +205,7 @@ query {
     title
     maxGuests
     basePricePerNight
+    totalPrice
   }
 }
 ```
@@ -225,6 +232,180 @@ mutation {
   updateBookingStatus(id: 1, status: CONFIRMED) {
     id
     status
+  }
+}
+```
+
+## Flujo completo paso a paso
+0) Health
+```graphql
+query { _health }
+```
+
+1) Registrar PROPIETARIO (guarda el token)
+```graphql
+mutation {
+  register(
+    name: "Propietario Demo"
+    email: "propietario@test.com"
+    password: "123456"
+    role: PROPIETARIO
+  ) {
+    token
+    user { id name email role }
+  }
+}
+```
+
+2) Login PROPIETARIO
+```graphql
+mutation {
+  login(
+    email: "propietario@test.com"
+    password: "123456"
+  ) {
+    token
+    user { id name email role }
+  }
+}
+```
+Headers para las siguientes operaciones:
+```json
+{ "Authorization": "Bearer TU_TOKEN_PROP" }
+```
+
+3) Ver cuenta
+```graphql
+query {
+  account { id name email role }
+}
+```
+
+4) Crear propiedades (propietario)
+```graphql
+mutation {
+  createProperty(
+    title: "Apartamento Centro"
+    description: "2 habitaciones, cerca al parque"
+    maxGuests: 3
+    basePricePerNight: 150000
+  ) { id title maxGuests basePricePerNight }
+}
+```
+Otra:
+```graphql
+mutation {
+  createProperty(
+    title: "Casa en la playa"
+    description: "Vista al mar, 3 habitaciones"
+    maxGuests: 5
+    basePricePerNight: 300000
+  ) { id title maxGuests basePricePerNight }
+}
+```
+
+5) Listar mis propiedades
+```graphql
+query {
+  myProperties {
+    id title description maxGuests basePricePerNight
+  }
+}
+```
+
+6) Ver propiedad por id
+```graphql
+query {
+  property(id: 1) {
+    id title description maxGuests basePricePerNight
+    owner { id name email }
+  }
+}
+```
+
+7) Bloquear fechas (propietario)
+```graphql
+mutation {
+  createBlockedDate(
+    propertyId: 1
+    startDate: "2025-12-20"
+    endDate: "2025-12-25"
+  ) { id propertyId startDate endDate }
+}
+```
+
+8) Registrar VIAJERO
+```graphql
+mutation {
+  register(
+    name: "Viajero Demo"
+    email: "viajero@test.com"
+    password: "123456"
+    role: VIAJERO
+  ) {
+    token
+    user { id name email role }
+  }
+}
+```
+
+9) Login VIAJERO
+```graphql
+mutation {
+  login(
+    email: "viajero@test.com"
+    password: "123456"
+  ) {
+    token
+    user { id name email role }
+  }
+}
+```
+Headers de viajero:
+```json
+{ "Authorization": "Bearer TU_TOKEN_VIAJERO" }
+```
+
+10) Buscar propiedades disponibles
+```graphql
+query {
+  searchAvailableProperties(
+    start: "2025-12-10"
+    end: "2025-12-15"
+    guests: 2
+  ) {
+    id title maxGuests basePricePerNight
+  }
+}
+```
+
+11) Crear reserva (viajero)
+```graphql
+mutation {
+  createBooking(
+    propertyId: 1
+    startDate: "2025-12-10"
+    endDate: "2025-12-12"
+    guests: 2
+  ) {
+    id
+    property { id title }
+    traveler { id name }
+    startDate endDate guests totalPrice status
+  }
+}
+```
+
+12) Confirmar reserva (propietario)
+```graphql
+mutation {
+  updateBookingStatus(
+    id: 1
+    status: CONFIRMED
+  ) {
+    id status
+    property { id title }
+    traveler { id name }
   }
 }
 ```
